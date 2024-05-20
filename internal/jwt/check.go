@@ -28,3 +28,22 @@ func ParseToken(tokenString string, secretKey []byte) (*jwt.Token, error) {
 	log.Print("Token parsed")
 	return token, nil
 }
+
+// GetIDFromToken func takes parsed token *jwt.Token
+// and returns id string and error
+func GetIDFromToken(token *jwt.Token) (id string, err error) {
+	if token == nil {
+		return "", errors.New("token is nil")
+	}
+
+	claim, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return "", fmt.Errorf("couldn't get claims from token: %w", err)
+	}
+	id, ok = claim["jti"].(string)
+	if !ok {
+		return "", fmt.Errorf("couldn't get id from token")
+	}
+
+	return id, nil
+}

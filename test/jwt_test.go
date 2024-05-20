@@ -50,3 +50,24 @@ func TestParseTokenValid(t *testing.T) {
 	// Checking if id in token equals id that we passed to CreateToken function
 	assert.Equal(t, "5", parsedID)
 }
+
+func TestGetIDFromTokenValid(t *testing.T) {
+	token, _ := myjwt.CreateToken("5")
+	parsedToken, _ := myjwt.ParseToken(token, []byte(myjwt.SecretKey))
+
+	id, err := myjwt.GetIDFromToken(parsedToken)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "5", id)
+
+	id1, err := myjwt.GetIDFromToken(parsedToken)
+	assert.NoError(t, err)
+
+	assert.Equal(t, id, id1)
+}
+
+func TestGetIDFromTokenInvalid(t *testing.T) {
+	id, err := myjwt.GetIDFromToken(nil)
+	assert.Error(t, err)
+	assert.Equal(t, "", id)
+}

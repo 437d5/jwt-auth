@@ -14,7 +14,9 @@ type Server struct {
 }
 
 func (s *Server) Login(ctx context.Context, req *api.LoginRequest) (*api.LoginResponse, error) {
+	// TODO expAt use config instead
 	expAt := timestamppb.New(time.Now().Add(time.Hour))
+	// TODO get user_id from db
 	accessToken, err := jwt.CreateToken("5")
 	if err != nil {
 		log.Fatal(err)
@@ -24,9 +26,18 @@ func (s *Server) Login(ctx context.Context, req *api.LoginRequest) (*api.LoginRe
 }
 
 func (s *Server) ValidateToken(context.Context, *api.ValidateTokenRequest) (*api.ValidateTokenResponse, error) {
-	return &api.ValidateTokenResponse{}, nil
+	// TODO use ValidateToken func instead
+	isValid := true
+	// TODO take userID from token
+	userID := "5"
+	return &api.ValidateTokenResponse{IsValid: isValid,
+		UserId: userID}, nil
 }
 
 func (s *Server) Register(context.Context, *api.RegisterRequest) (*api.RegisterResponse, error) {
-	return &api.RegisterResponse{}, nil
+	// TODO get new user id from db
+	userID := "5"
+	createdAt := timestamppb.New(time.Now())
+	return &api.RegisterResponse{UserId: userID,
+		CreatedAt: createdAt}, nil
 }

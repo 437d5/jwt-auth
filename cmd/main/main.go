@@ -1,24 +1,19 @@
 package main
 
 import (
-	"github.com/437d5/jwt-auth/internal/server"
-	"github.com/437d5/jwt-auth/pkg/api"
-	"google.golang.org/grpc"
+	"context"
+	"github.com/437d5/jwt-auth/internal/app"
 	"log"
-	"net"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
-	s := grpc.NewServer()
-	srv := &server.Server{}
-	api.RegisterAuthServiceServer(s, srv)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
-	l, err := net.Listen("tcp", ":8080")
+	err := app.RunServer(ctx)
 	if err != nil {
-		log.Fatal(err)
-	}
-
-	if err := s.Serve(l); err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to start server: %s", err)
 	}
 }

@@ -32,6 +32,7 @@ func TestCreateTokenInvalid(t *testing.T) {
 
 func TestParseTokenValid(t *testing.T) {
 	token, _ := myjwt.CreateToken("5")
+	// TODO secretkey
 	parsedToken, err := myjwt.ParseToken(token, []byte(myjwt.SecretKey))
 	assert.NoError(t, err)
 
@@ -53,6 +54,7 @@ func TestParseTokenValid(t *testing.T) {
 
 func TestGetIDFromTokenValid(t *testing.T) {
 	token, _ := myjwt.CreateToken("5")
+	// TODO secret key
 	parsedToken, _ := myjwt.ParseToken(token, []byte(myjwt.SecretKey))
 
 	id, err := myjwt.GetIDFromToken(parsedToken)

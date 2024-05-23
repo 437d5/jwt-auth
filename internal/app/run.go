@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/437d5/jwt-auth/internal/config"
+	"github.com/437d5/jwt-auth/internal/db"
 	"github.com/437d5/jwt-auth/internal/server"
 	"github.com/437d5/jwt-auth/pkg/api"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -72,9 +73,13 @@ func (a *App) Run(ctx context.Context) error {
 	}
 }
 
-func NewServer(cfg *config.Config) (*grpc.Server, net.Listener, error) {
+func NewServer(cfg *config.Config, client *mongo.Client) (*grpc.Server, net.Listener, error) {
 	s := grpc.NewServer()
-	srv := &server.Server{}
+	srv := &server.Server{
+		DB: db.Repo{
+			DB: client,
+		},
+	}
 	api.RegisterAuthServiceServer(s, srv)
 	portStr := fmt.Sprintf(":%s", cfg.SRV.Port)
 
@@ -91,7 +96,7 @@ func NewApp(ctx context.Context, cfg *config.Config) (*App, error) {
 		return nil, err
 	}
 
-	s, l, err := NewServer(cfg)
+	s, l, err := NewServer(cfg, client)
 	if err != nil {
 		return nil, err
 	}

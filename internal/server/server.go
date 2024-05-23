@@ -2,7 +2,10 @@ package server
 
 import (
 	"context"
+	"errors"
+	"github.com/437d5/jwt-auth/internal/db"
 	"github.com/437d5/jwt-auth/internal/jwt"
+	"github.com/437d5/jwt-auth/internal/validations"
 	"github.com/437d5/jwt-auth/pkg/api"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"log"
@@ -11,6 +14,7 @@ import (
 
 type Server struct {
 	api.UnimplementedAuthServiceServer
+	DB db.Repo
 }
 
 func (s *Server) Login(ctx context.Context, req *api.LoginRequest) (*api.LoginResponse, error) {
@@ -38,9 +42,29 @@ func (s *Server) ValidateToken(context.Context, *api.ValidateTokenRequest) (*api
 		UserId: userID}, nil
 }
 
-func (s *Server) Register(context.Context, *api.RegisterRequest) (*api.RegisterResponse, error) {
+func (s *Server) Register(ctx context.Context, req *api.RegisterRequest) (*api.RegisterResponse, error) {
 	log.Print("New try of register detected")
-	// TODO email, username and password validation
+	user := db.User{
+		Username: req.Username,
+		Password: req.Password,
+		Email:    req.Email,
+	}
+	ok := validations.ValidateUsername(user.Username)
+	if !ok {
+		return nil, errors.New("invalid username")
+	}
+	ok = validations.ValidatePassword(user.Password)
+	if !ok {
+		return nil, errors.New("invalid password")
+	}
+	ok = validations.ValidateEmail(user.Email)
+	if !ok {
+		return nil, errors.New("invalid email")
+	}
+	err := s.DB.CreateNewUser(ctx, user)
+	if err != nil {
+		return nil, err
+	}
 	// TODO get new user id from db
 	userID := "5"
 	createdAt := timestamppb.New(time.Now())

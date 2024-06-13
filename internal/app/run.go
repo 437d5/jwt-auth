@@ -29,6 +29,7 @@ func databaseConnect(ctx context.Context, cfg *config.Config) (*mongo.Client, er
 	log.Print("Trying to connect to database")
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
+
 		return nil, err
 	}
 

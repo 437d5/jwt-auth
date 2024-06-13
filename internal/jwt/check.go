@@ -4,46 +4,66 @@ import (
 	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
+	"time"
 )
 
-// ParseToken func parses the provided tokenString
-// and returns *jwt.Token and error
-func ParseToken(tokenString string, secretKey []byte) (*jwt.Token, error) {
+// ValidToken func get tokenString of type string, parses it and
+// returns true if token is valid or false
+func ValidToken(tokenString string, secretKey []byte) (*jwt.Token, error) {
 	log.Print("Starting token parsing")
-	// TODO change secretKey to config
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+
+	// Parse the token
+	token, err := jwt.ParseWithClaims(tokenString, &TokenClaims{}, func(token *jwt.Token) (interface{}, error) {
+		// Ensure the signing method is HMAC
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			log.Print("invalid signing method in token")
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return secretKey, nil
 	})
+
 	if err != nil {
+		log.Printf("Error parsing token: %v", err)
 		return nil, err
 	}
+
 	if !token.Valid {
+		log.Print("Invalid token")
 		return nil, errors.New("invalid token")
 	}
 
-	log.Print("Token parsed")
+	// Type assert the claims to TokenClaims
+	claims, ok := token.Claims.(*TokenClaims)
+	if !ok {
+		log.Print("Invalid token claims")
+		return nil, errors.New("could not parse claims")
+	}
+
+	if claims.ExpiresAt != nil && claims.ExpiresAt.Before(time.Now()) {
+		log.Print("Token expired")
+		return nil, errors.New("token has expired")
+	}
+
+	log.Print("Token parsed successfully")
 	return token, nil
 }
 
 // GetIDFromToken func takes parsed token *jwt.Token
 // and returns id string and error
-func GetIDFromToken(token *jwt.Token) (id string, err error) {
+func GetIDFromToken(token *jwt.Token) (primitive.ObjectID, error) {
 	if token == nil {
-		return "", errors.New("token is nil")
+		log.Print("Token is nil")
+		return primitive.NilObjectID, errors.New("token is nil")
 	}
 
-	claim, ok := token.Claims.(jwt.MapClaims)
+	claims, ok := token.Claims.(*TokenClaims)
 	if !ok {
-		return "", fmt.Errorf("couldn't get claims from token: %w", err)
+		log.Print("Invalid token claims")
+		return primitive.NilObjectID, fmt.Errorf("couldn't get claims from token")
 	}
-	id, ok = claim["jti"].(string)
-	if !ok {
-		return "", fmt.Errorf("couldn't get id from token")
-	}
+	id := claims.ID
 
 	return id, nil
 }

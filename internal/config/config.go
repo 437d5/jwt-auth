@@ -52,8 +52,8 @@ func NewConfig() (*Config, error) {
 		DB: Database{
 			Host:         getEnv("HOST", "localhost"),
 			Port:         dbPort,
-			Username:     getEnv("USER", ""),
-			Password:     getEnv("PWD", ""),
+			Username:     getEnv("DB_USERNAME", ""),
+			Password:     getEnv("PASSWORD", ""),
 			DatabaseName: getEnv("DBNAME", ""),
 		},
 		SRV: Server{
@@ -63,6 +63,7 @@ func NewConfig() (*Config, error) {
 }
 
 func (c Config) CreateConnString() string {
+	log.Print(c)
 	dbURL := &url.URL{
 		Scheme: "mongodb",
 		User:   url.UserPassword(c.DB.Username, c.DB.Password),

@@ -2,47 +2,64 @@ package config
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"log"
 	"net/url"
 	"os"
+	"strconv"
 )
 
 type Config struct {
-	Token JWTToken `yaml:"jwt_tokens"`
-	DB    Database `yaml:"database"`
-	SRV   Server   `yaml:"server"`
+	Token JWTToken
+	DB    Database
+	SRV   Server
 }
 
 type JWTToken struct {
-	Secret string `yaml:"secret"`
+	Secret string
+	ExpAt  int
 }
 
 type Database struct {
-	Host         string `yaml:"host"`
-	Port         int    `yaml:"port"`
-	Username     string `yaml:"user"`
-	Password     string `yaml:"pwd"`
-	DatabaseName string `yaml:"dbname"`
+	Host         string
+	Port         int
+	Username     string
+	Password     string
+	DatabaseName string
 }
 
 type Server struct {
-	Port string `yaml:"port"`
+	Port string
 }
 
-func NewConfig(filename string) (*Config, error) {
-	data, err := os.ReadFile(filename)
+func NewConfig() (*Config, error) {
+	dbPort, err := strconv.Atoi(getEnv("DB_PORT", "27017"))
 	if err != nil {
+		log.Fatal("invalid DB_PORT variable")
 		return nil, err
 	}
 
-	var config Config
-	err = yaml.Unmarshal(data, &config)
+	expAt, err := strconv.Atoi(getEnv("EXP_AT", "1"))
 	if err != nil {
+		log.Fatal("invalid EXP_AT variable")
 		return nil, err
 	}
 
-	return &config, nil
+	return &Config{
+		Token: JWTToken{
+			Secret: getEnv("SECRET_KEY", "secret"),
+			ExpAt:  expAt,
+		},
+		DB: Database{
+			Host:         getEnv("HOST", "localhost"),
+			Port:         dbPort,
+			Username:     getEnv("USER", ""),
+			Password:     getEnv("PWD", ""),
+			DatabaseName: getEnv("DBNAME", ""),
+		},
+		SRV: Server{
+			Port: getEnv("SRV_PORT", "8080"),
+		},
+	}, nil
 }
 
 func (c Config) CreateConnString() string {
@@ -54,4 +71,12 @@ func (c Config) CreateConnString() string {
 	}
 	log.Print(dbURL)
 	return dbURL.String()
+}
+
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+
+	return fallback
 }

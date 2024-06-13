@@ -6,6 +6,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
+	"os"
 	"time"
 )
 
@@ -13,9 +14,6 @@ type TokenClaims struct {
 	ID primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	jwt.RegisteredClaims
 }
-
-// TODO delete secretKey
-const SecretKey = "secret"
 
 // CreateToken func creates new JWT token with provided id of type primitive.ObjectID
 // It returns JWT of string type and error if it occurs
@@ -29,8 +27,12 @@ func CreateToken(id primitive.ObjectID) (string, error) {
 	now := time.Now()
 	// TODO change exp time to config
 	exp := now.Add(time.Hour)
-	// TODO change secret to config secret
-	mySecretKey := []byte(SecretKey)
+
+	secretKey, ok := os.LookupEnv("SECRET_KEY")
+	if !ok {
+		return "", errors.New("cannot get SECRET_KEY variable")
+	}
+	mySecretKey := []byte(secretKey)
 	claims := TokenClaims{
 		ID: id,
 		RegisteredClaims: jwt.RegisteredClaims{

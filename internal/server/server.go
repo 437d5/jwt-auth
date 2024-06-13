@@ -10,6 +10,8 @@ import (
 	"github.com/437d5/jwt-auth/pkg/api"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"log"
+	"os"
+	"strconv"
 	"time"
 )
 
@@ -21,14 +23,25 @@ type Server struct {
 func (s *Server) Login(ctx context.Context, req *api.LoginRequest) (*api.LoginResponse, error) {
 	log.Print("New try of login detected")
 	log.Printf("Username: %s, password: %s", req.GetUsername(), req.GetPassword())
-	// TODO expAt use config instead
-	expAt := timestamppb.New(time.Now().Add(time.Hour))
+
+	expAtStr, ok := os.LookupEnv("EXP_AT")
+	if !ok {
+		return nil, errors.New("no EXP_AT variable provided")
+	}
+	expAtDur, err := strconv.Atoi(expAtStr)
+	if err != nil {
+		log.Fatal("invalid EXP_AT variable")
+		return nil, err
+	}
+
+	expAt := timestamppb.New(time.Now().Add(time.Hour * time.Duration(expAtDur)))
 	user, err := s.DB.GetUserByUsername(ctx, req.GetUsername())
 	if err != nil {
 		log.Print(err)
 		return nil, err
 	}
-	ok := pswd.Compare(req.GetPassword(), user.Password)
+
+	ok = pswd.Compare(req.GetPassword(), user.Password)
 	if !ok {
 		log.Print("Password incorrect")
 		return nil, errors.New("wrong password")
@@ -45,9 +58,12 @@ func (s *Server) Login(ctx context.Context, req *api.LoginRequest) (*api.LoginRe
 
 func (s *Server) ValidateToken(ctx context.Context, req *api.ValidateTokenRequest) (*api.ValidateTokenResponse, error) {
 	log.Print("New try of token validation detected")
-	// TODO change secret to config
+	secretKey, ok := os.LookupEnv("SECRET_KEY")
+	if !ok {
+		return nil, errors.New("cannot get SECRET_KEY variable")
+	}
 	isValid := false
-	token, err := jwt.ValidToken(req.AccessToken, []byte("secret"))
+	token, err := jwt.ValidToken(req.AccessToken, []byte(secretKey))
 	if err != nil {
 		log.Print(err)
 		return nil, err
@@ -92,7 +108,7 @@ func (s *Server) Register(ctx context.Context, req *api.RegisterRequest) (*api.R
 		log.Print(err)
 		return nil, err
 	}
-	// TODO get new user id from db
+
 	newUser, err := s.DB.GetUserByUsername(ctx, user.Username)
 	if err != nil {
 		log.Print(err)

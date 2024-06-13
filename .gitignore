@@ -1,3 +1,5 @@
 /bin/
 /.idea
 /internal/config/config.yaml
+main
+.env

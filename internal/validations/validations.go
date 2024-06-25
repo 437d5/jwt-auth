@@ -12,8 +12,8 @@ func ValidateEmail(email string) bool {
 	return emailRegex.MatchString(email)
 }
 
-// ValidateUsername checks if the provided username is valid
-func ValidateUsername(username string) bool {
+// validateUsername checks if the provided username is valid
+func validateUsername(username string) bool {
 	if len(username) < 5 || len(username) > 16 {
 		return false
 	}
@@ -36,8 +36,8 @@ func ValidateUsername(username string) bool {
 	return true
 }
 
-// ValidatePassword checks if the provided password is valid
-func ValidatePassword(password string) bool {
+// validatePassword checks if the provided password is valid
+func validatePassword(password string) bool {
 	if len(password) < 8 {
 		return false
 	}
@@ -55,4 +55,13 @@ func ValidatePassword(password string) bool {
 	}
 
 	return hasLetter && hasDigit
+}
+
+func ValidatePasswordUsername(password, username string) bool {
+	ok := validatePassword(password)
+	if !ok {
+		return ok
+	}
+	ok = validateUsername(username)
+	return ok
 }

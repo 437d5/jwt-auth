@@ -45,3 +45,31 @@ func (r *Repo) GetUserByUsername(ctx context.Context, username string) (User, er
 	}
 	return user, nil
 }
+
+func (r *Repo) GetUserByEmail(ctx context.Context, email string) (User, error) {
+	collection := r.DB.Database("users").Collection("users")
+	var user User
+	err := collection.FindOne(ctx, bson.D{
+		{Key: "email", Value: email},
+	}).Decode(&user)
+	if err != nil {
+		log.Print(err)
+		return User{}, err
+	}
+	return user, nil
+}
+
+func (r *Repo) UserExists(ctx context.Context, username, email string) bool {
+	var usernameFlag, emailFlag bool
+	_, err := r.GetUserByUsername(ctx, username)
+	if err == nil {
+		usernameFlag = true
+	}
+
+	_, err = r.GetUserByEmail(ctx, email)
+	if err == nil {
+		emailFlag = true
+	}
+
+	return usernameFlag || emailFlag
+}

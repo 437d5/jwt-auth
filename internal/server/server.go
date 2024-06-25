@@ -23,6 +23,11 @@ type Server struct {
 func (s *Server) Login(ctx context.Context, req *api.LoginRequest) (*api.LoginResponse, error) {
 	log.Print("New try of login detected")
 	log.Printf("Username: %s, password: %s", req.GetUsername(), req.GetPassword())
+	ok := validations.ValidatePasswordUsername(req.Username, req.Password)
+	if !ok {
+		log.Print("Incorrect password or username")
+		return nil, errors.New("incorrect password or username")
+	}
 
 	expAtStr, ok := os.LookupEnv("EXP_AT")
 	if !ok {
@@ -88,20 +93,20 @@ func (s *Server) Register(ctx context.Context, req *api.RegisterRequest) (*api.R
 		Password: req.GetPassword(),
 		Email:    req.Email,
 	}
-	ok := validations.ValidateUsername(user.Username)
+	ok := validations.ValidatePasswordUsername(user.Username, user.Password)
 	if !ok {
-		log.Print("Username incorrect")
-		return nil, errors.New("invalid username")
-	}
-	ok = validations.ValidatePassword(user.Password)
-	if !ok {
-		log.Print("Password incorrect")
-		return nil, errors.New("invalid password")
+		log.Print("incorrect password or username")
+		return nil, errors.New("incorrect password or username")
 	}
 	ok = validations.ValidateEmail(user.Email)
 	if !ok {
 		log.Print("Email incorrect")
 		return nil, errors.New("invalid email")
+	}
+	isExist := s.DB.UserExists(ctx, user.Username, user.Password)
+	if isExist == true {
+		log.Print("User with this email or password already exist")
+		return nil, errors.New("user with this email or password already exist")
 	}
 	err := s.DB.CreateNewUser(ctx, user)
 	if err != nil {

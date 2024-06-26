@@ -1,6 +1,7 @@
 package validations
 
 import (
+	"log"
 	"regexp"
 	"strings"
 	"unicode"
@@ -57,11 +58,15 @@ func validatePassword(password string) bool {
 	return hasLetter && hasDigit
 }
 
-func ValidatePasswordUsername(password, username string) bool {
+func ValidatePasswordUsername(username, password string) bool {
 	ok := validatePassword(password)
 	if !ok {
-		return ok
+		log.Print("Password validation failed")
+		return false
 	}
 	ok = validateUsername(username)
+	if !ok {
+		log.Print("Username validation failed")
+	}
 	return ok
 }

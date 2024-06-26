@@ -39,6 +39,7 @@ func databaseConnect(ctx context.Context, cfg *config.Config) (*mongo.Client, er
 	}
 
 	log.Print("Connected to database")
+	//ensureIndexes(ctx, client)
 	return client, nil
 }
 
@@ -109,3 +110,31 @@ func NewApp(ctx context.Context, cfg *config.Config) (*App, error) {
 	}
 	return a, nil
 }
+
+//func ensureIndexes(ctx context.Context, client *mongo.Client) {
+//	collection := client.Database("messenger").Collection("users")
+//
+//	// Создание уникального индекса на поле username
+//	_, err := collection.Indexes().CreateOne(
+//		ctx,
+//		mongo.IndexModel{
+//			Keys:    bson.M{"name": 1},
+//			Options: options.Index().SetUnique(true),
+//		},
+//	)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//
+//	// Создание уникального индекса на поле email
+//	_, err = collection.Indexes().CreateOne(
+//		ctx,
+//		mongo.IndexModel{
+//			Keys:    bson.M{"email": 1},
+//			Options: options.Index().SetUnique(true),
+//		},
+//	)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//}

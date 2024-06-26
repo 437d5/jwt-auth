@@ -91,11 +91,11 @@ func (s *Server) Register(ctx context.Context, req *api.RegisterRequest) (*api.R
 	user := db.User{
 		Username: req.GetUsername(),
 		Password: req.GetPassword(),
-		Email:    req.Email,
+		Email:    req.GetEmail(),
 	}
 	ok := validations.ValidatePasswordUsername(user.Username, user.Password)
 	if !ok {
-		log.Print("incorrect password or username")
+		log.Print("Incorrect password or username")
 		return nil, errors.New("incorrect password or username")
 	}
 	ok = validations.ValidateEmail(user.Email)
@@ -103,12 +103,17 @@ func (s *Server) Register(ctx context.Context, req *api.RegisterRequest) (*api.R
 		log.Print("Email incorrect")
 		return nil, errors.New("invalid email")
 	}
-	isExist := s.DB.UserExists(ctx, user.Username, user.Password)
-	if isExist == true {
+	isExist, err := s.DB.UserExists(ctx, user.Username, user.Email)
+	if err != nil {
+		log.Print("Error while checking is user existing")
+		return nil, err
+	}
+	if isExist {
 		log.Print("User with this email or password already exist")
 		return nil, errors.New("user with this email or password already exist")
 	}
-	err := s.DB.CreateNewUser(ctx, user)
+
+	err = s.DB.CreateNewUser(ctx, user)
 	if err != nil {
 		log.Print(err)
 		return nil, err
@@ -119,6 +124,7 @@ func (s *Server) Register(ctx context.Context, req *api.RegisterRequest) (*api.R
 		log.Print(err)
 		return nil, err
 	}
+
 	userID := newUser.ID.Hex()
 	createdAt := timestamppb.New(time.Now())
 

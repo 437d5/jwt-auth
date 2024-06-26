@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"errors"
 	"github.com/437d5/jwt-auth/internal/pswd"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -46,30 +47,18 @@ func (r *Repo) GetUserByUsername(ctx context.Context, username string) (User, er
 	return user, nil
 }
 
-func (r *Repo) GetUserByEmail(ctx context.Context, email string) (User, error) {
-	collection := r.DB.Database("users").Collection("users")
+func (r *Repo) UserExists(ctx context.Context, username, email string) (bool, error) {
 	var user User
-	err := collection.FindOne(ctx, bson.D{
-		{Key: "email", Value: email},
-	}).Decode(&user)
+	collection := r.DB.Database("users").Collection("users")
+	err := collection.FindOne(ctx, bson.M{"$or": []bson.M{
+		{"username": username},
+		{"email": email},
+	}}).Decode(&user)
 	if err != nil {
-		log.Print(err)
-		return User{}, err
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return false, nil
+		}
+		return false, err
 	}
-	return user, nil
-}
-
-func (r *Repo) UserExists(ctx context.Context, username, email string) bool {
-	var usernameFlag, emailFlag bool
-	_, err := r.GetUserByUsername(ctx, username)
-	if err == nil {
-		usernameFlag = true
-	}
-
-	_, err = r.GetUserByEmail(ctx, email)
-	if err == nil {
-		emailFlag = true
-	}
-
-	return usernameFlag || emailFlag
+	return true, nil
 }
